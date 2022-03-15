@@ -5,17 +5,18 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 
 from .models import Choice, Question
+from django.urls import reverse
+from django.views import generic
 from django.template import loader
 
 
-def detail(request, question_id):
-        question = get_object_or_404(Question, pk=question_id)
-        return render(request, 'polls/detail.html', {'question': question})
+class IndexView(generic.ListView):
+    template_name = 'polls/index.html'
+    context_object_name = 'latest_question_list'
 
-def results(request, question_id):
-    response = "You're looking at the results of question %s."
-    question = get_object_or_404(Question, pk=question_id)
-    return render(request, 'polls/results.html', {'question': question})
+    def get_queryset(self):
+        """Return the last five published questions."""
+        return Question.objects.order_by('-pub_date')[:5]
     
 
 def vote(request, question_id):
@@ -37,13 +38,13 @@ def vote(request, question_id):
         # user hits the Back button.
         return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
 
+class DetailView(generic.DetailView):
+    model = Question
+    template_name = 'polls/detail.html'
 
 
-def index(request):
-    latest_question_list = Question.objects.order_by('-pub_date')[:5]
-    template = loader.get_template('polls/index.html')
-    context = {
-        'latest_question_list': latest_question_list,
-    }
-    return HttpResponse(template.render(context, request))
-# Leave the rest of the views (detail, results, vote) unchanged
+class ResultsView(generic.DetailView):
+    model = Question
+    template_name = 'polls/results.html'
+
+
